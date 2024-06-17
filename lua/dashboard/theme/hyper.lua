@@ -6,7 +6,7 @@ local function gen_shortcut(config)
   local shortcut = config.shortcut
     or {
       { desc = '[  Github]', group = 'DashboardShortCut' },
-      { desc = '[  glepnir]', group = 'DashboardShortCut' },
+      { desc = '[  BEKA-BIRHANU]', group = 'DashboardShortCut' },
       { desc = '[  0.2.3]', group = 'DashboardShortCut' },
     }
 
@@ -441,7 +441,7 @@ end
 local function gen_footer(config)
   local footer = {
     '',
-    ' 🚀 Sharp tools make good work.',
+    ' 🚀 I hate it and love it at the same time.',
   }
 
   if type(config.footer) == 'string' then
