@@ -441,7 +441,7 @@ end
 local function gen_footer(config)
   local footer = {
     '',
-    ' 🚀 I hate it and love it at the same time.',
+    ' 💻 I Hate it and Love it at the same time.',
   }
 
   if type(config.footer) == 'string' then
