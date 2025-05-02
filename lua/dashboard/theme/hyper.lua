@@ -89,6 +89,16 @@ local function load_packages(config)
         .. package_manager_stats.count
         .. ' installed',
     }
+  elseif package_manager_stats.name == 'strive' then
+    lines = {
+      '',
+      'Startuptime: ' .. package_manager_stats.time .. ' ms',
+      'Plugins: '
+        .. package_manager_stats.loaded
+        .. ' loaded / '
+        .. package_manager_stats.count
+        .. ' installed',
+    }
   else
     lines = {
       '',
@@ -180,14 +190,13 @@ local function mru_list(config)
 
   if config.mru.cwd_only then
     local cwd = uv.cwd()
-    -- get separator from the first file
-    local sep = mlist[1]:match('[\\/]')
-    local cwd_with_sep = cwd:gsub('[\\/]', sep) .. sep
+    -- Normalize both paths to use forward slashes
+    cwd = vim.fn.fnamemodify(cwd, ':p')
     mlist = vim.tbl_filter(function(file)
-      local file_dir = vim.fn.fnamemodify(file, ':p:h')
-      if file_dir and cwd_with_sep then
-        return file_dir:sub(1, #cwd_with_sep) == cwd_with_sep
-      end
+      local file_path = vim.fn.fnamemodify(file, ':p')
+      local file_dir = vim.fn.fnamemodify(file_path, ':h') .. '/'
+      -- Ensure both paths end with separator and are normalized
+      return file_dir:sub(1, #cwd) == cwd
     end, mlist)
   end
 
@@ -227,6 +236,12 @@ local function letter_hotkey(config)
     if item.key then
       table.insert(used_keys, item.key:byte())
     end
+  end
+
+  local confirm_keys = type(config.confirm_key) == 'table' and config.confirm_key
+    or { config.confirm_key }
+  for _, key in ipairs(confirm_keys) do
+    table.insert(used_keys, key:byte())
   end
 
   math.randomseed(os.time())
@@ -528,7 +543,11 @@ local function theme_instance(config)
     load_packages(config)
     gen_center(plist, config)
     gen_footer(config)
-    map_key(config, config.confirm_key or '<CR>')
+    local confirm_keys = type(config.confirm_key) == 'table' and config.confirm_key
+      or { config.confirm_key or '<CR>' }
+    for _, key in ipairs(confirm_keys) do
+      map_key(config, key)
+    end
     require('dashboard.events').register_lsp_root(config.path)
     local size = math.floor(vim.o.lines / 2)
       - math.ceil(api.nvim_buf_line_count(config.bufnr) / 2)

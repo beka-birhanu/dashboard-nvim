@@ -2,10 +2,20 @@ local uv = vim.loop
 local utils = {}
 
 utils.is_win = uv.os_uname().version:match('Windows')
+local is_nvim_11_or_newer = vim.fn.has('nvim-0.11') == 1
 
 function utils.path_join(...)
   local path_sep = utils.is_win and '\\' or '/'
   return table.concat({ ... }, path_sep)
+end
+
+-- dynamically use correct validate form method
+local function validate_table(name, value)
+  if is_nvim_11_or_newer then
+    vim.validate(name, value, 'table')
+  else
+    vim.validate({ [name] = { value, 't' } })
+  end
 end
 
 function utils.element_align(tbl)
@@ -26,9 +36,7 @@ function utils.element_align(tbl)
 end
 
 function utils.get_max_len(contents)
-  vim.validate({
-    contents = { contents, 't' },
-  })
+  validate_table('contents', contents)
   local cells = {}
   for _, v in pairs(contents) do
     table.insert(cells, vim.api.nvim_strwidth(v))
@@ -39,9 +47,7 @@ end
 
 -- draw the graphics into the screen center
 function utils.center_align(tbl)
-  vim.validate({
-    tbl = { tbl, 'table' },
-  })
+  validate_table('tbl', tbl)
   local function fill_sizes(lines)
     local fills = {}
     for _, line in pairs(lines) do
@@ -100,7 +106,7 @@ function utils.disable_move_key(bufnr)
   end, keys)
 end
 
---- return the most recently files list
+-- return the most recently files list
 function utils.get_mru_list()
   local mru = {}
   for _, file in pairs(vim.v.oldfiles or {}) do
@@ -122,9 +128,17 @@ function utils.get_package_manager_stats()
   local status, lazy = pcall(require, 'lazy')
   if status then
     package_manager_stats.name = 'lazy'
-    package_manager_stats.loaded = lazy.stats().loaded
-    package_manager_stats.count = lazy.stats().count
-    package_manager_stats.time = lazy.stats().startuptime
+    local stats = lazy.stats()
+    package_manager_stats.loaded = stats.loaded
+    package_manager_stats.count = stats.count
+    package_manager_stats.time = stats.startuptime
+  end
+  local ok = pcall(require, 'strive')
+  if ok then
+    package_manager_stats.name = 'strive'
+    package_manager_stats.loaded = vim.g.strive_loaded
+    package_manager_stats.time = vim.g.strive_startup_time
+    package_manager_stats.count = vim.g.strive_count
   end
   return package_manager_stats
 end
@@ -135,7 +149,6 @@ function utils.generate_empty_table(length)
   if length == 0 then
     return empty_tbl
   end
-
   for _ = 1, length do
     table.insert(empty_tbl, '')
   end
