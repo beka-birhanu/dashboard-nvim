@@ -4,11 +4,11 @@ local ns = api.nvim_create_namespace('dashboard')
 
 local function gen_shortcut(config)
   local shortcut = config.shortcut
-    or {
-      { desc = '[  Github]', group = 'DashboardShortCut' },
-      { desc = '[  BEKA-BIRHANU]', group = 'DashboardShortCut' },
-      { desc = '[  0.2.3]', group = 'DashboardShortCut' },
-    }
+      or {
+        { desc = '[  Github]', group = 'DashboardShortCut' },
+        { desc = '[  BEKA-BIRHANU]', group = 'DashboardShortCut' },
+        { desc = '[  0.2.3]', group = 'DashboardShortCut' },
+      }
 
   if vim.tbl_isempty(shortcut) then
     shortcut = {}
@@ -84,20 +84,20 @@ local function load_packages(config)
       '',
       'Startuptime: ' .. package_manager_stats.time .. ' ms',
       'Plugins: '
-        .. package_manager_stats.loaded
-        .. ' loaded / '
-        .. package_manager_stats.count
-        .. ' installed',
+      .. package_manager_stats.loaded
+      .. ' loaded / '
+      .. package_manager_stats.count
+      .. ' installed',
     }
   elseif package_manager_stats.name == 'strive' then
     lines = {
       '',
       'Startuptime: ' .. package_manager_stats.time .. ' ms',
       'Plugins: '
-        .. package_manager_stats.loaded
-        .. ' loaded / '
-        .. package_manager_stats.count
-        .. ' installed',
+      .. package_manager_stats.loaded
+      .. ' loaded / '
+      .. package_manager_stats.count
+      .. ' installed',
     }
   else
     lines = {
@@ -239,7 +239,7 @@ local function letter_hotkey(config)
   end
 
   local confirm_keys = type(config.confirm_key) == 'table' and config.confirm_key
-    or { config.confirm_key }
+      or { config.confirm_key }
   for _, key in ipairs(confirm_keys) do
     table.insert(used_keys, key:byte())
   end
@@ -308,7 +308,7 @@ local function map_key(config, key, content)
     local scol = utils.is_win and text:find('%w') or text:find('%p')
     local path = nil
 
-    if scol ~= nil then -- scol == nil if pressing enter in empty space
+    if scol ~= nil then                        -- scol == nil if pressing enter in empty space
       if text:sub(scol, scol + 1) ~= '~/' then -- is relative path
         scol = math.min(text:find('%w'), text:find('%p'))
       end
@@ -347,130 +347,6 @@ local function map_key(config, key, content)
 end
 
 local function gen_center(plist, config)
-  local mlist, mgroups = mru_list(config)
-  local plist_len = #plist
-  if plist_len == 0 then
-    plist[#plist + 1] = ''
-    plist_len = 1
-  end
-  ---@diagnostic disable-next-line: param-type-mismatch
-  vim.list_extend(plist, mlist)
-  local max_len = utils.get_max_len(plist)
-  if max_len <= 40 then
-    local fill = (' '):rep(math.floor(vim.o.columns / 4))
-    for i, v in pairs(plist) do
-      plist[i] = v .. fill
-    end
-  end
-
-  plist = utils.element_align(plist)
-  plist = utils.center_align(plist)
-  local first_line = api.nvim_buf_line_count(config.bufnr)
-  api.nvim_buf_set_lines(config.bufnr, first_line, -1, false, plist)
-
-  if not config.project.enable and not config.mru.enable then
-    return
-  end
-
-  local _, scol = plist[2]:find('%S')
-  if scol == nil then
-    scol = 0
-  end
-
-  local start_col = scol
-  if config.mru.enable then
-    start_col = plist[plist_len + 2]:find('[^%s]') - 1
-  end
-
-  local hotkey = gen_hotkey(config)
-
-  api.nvim_buf_add_highlight(config.bufnr, 0, 'DashboardProjectTitle', first_line + 1, 0, -1)
-  api.nvim_buf_add_highlight(
-    config.bufnr,
-    0,
-    'DashboardProjectTitleIcon',
-    first_line + 1,
-    0,
-    scol + #config.project.icon
-  )
-
-  for i = 3, plist_len do
-    api.nvim_buf_add_highlight(
-      config.bufnr,
-      0,
-      'DashboardProjectIcon',
-      first_line + i - 1,
-      0,
-      start_col + 3
-    )
-    api.nvim_buf_add_highlight(
-      config.bufnr,
-      0,
-      'DashboardFiles',
-      first_line + i - 1,
-      start_col + 3,
-      -1
-    )
-    local text = api.nvim_buf_get_lines(config.bufnr, first_line + i - 1, first_line + i, false)[1]
-    if text and text:find('%w') and not text:find('empty') then
-      local key = tostring(hotkey())
-      api.nvim_buf_set_extmark(config.bufnr, ns, first_line + i - 1, 0, {
-        virt_text = { { key, 'DashboardShortCut' } },
-        virt_text_pos = 'eol',
-      })
-      map_key(config, key, text)
-    end
-  end
-
-  -- initialize the cursor pos
-  api.nvim_win_set_cursor(config.winid, { first_line + 3, start_col + 4 })
-
-  api.nvim_buf_add_highlight(config.bufnr, 0, 'DashboardMruTitle', first_line + plist_len, 0, -1)
-  api.nvim_buf_add_highlight(
-    config.bufnr,
-    0,
-    'DashboardMruIcon',
-    first_line + plist_len,
-    0,
-    scol + #config.mru.icon
-  )
-
-  for i, data in pairs(mgroups) do
-    local len, group = unpack(data)
-    if group then
-      api.nvim_buf_add_highlight(
-        config.bufnr,
-        0,
-        group,
-        first_line + i + plist_len,
-        start_col,
-        start_col + len
-      )
-    end
-    api.nvim_buf_add_highlight(
-      config.bufnr,
-      0,
-      'DashboardFiles',
-      first_line + i + plist_len,
-      start_col + len,
-      -1
-    )
-
-    local text = api.nvim_buf_get_lines(
-      config.bufnr,
-      first_line + i + plist_len,
-      first_line + i + plist_len + 1,
-      false
-    )[1]
-    if text and text:find('%w') then
-      local key = tostring(hotkey())
-      api.nvim_buf_set_extmark(config.bufnr, ns, first_line + i + plist_len, 0, {
-        virt_text = { { key, 'DashboardShortCut' } },
-        virt_text_pos = 'eol',
-      })
-      map_key(config, key, text)
-    end
-  end
 end
 
 local function gen_footer(config)
@@ -544,14 +420,14 @@ local function theme_instance(config)
     gen_center(plist, config)
     gen_footer(config)
     local confirm_keys = type(config.confirm_key) == 'table' and config.confirm_key
-      or { config.confirm_key or '<CR>' }
+        or { config.confirm_key or '<CR>' }
     for _, key in ipairs(confirm_keys) do
       map_key(config, key)
     end
     require('dashboard.events').register_lsp_root(config.path)
     local size = math.floor(vim.o.lines / 2)
-      - math.ceil(api.nvim_buf_line_count(config.bufnr) / 2)
-      - 2
+        - math.ceil(api.nvim_buf_line_count(config.bufnr) / 2)
+        - 2
     local fill = utils.generate_empty_table(size)
     api.nvim_buf_set_lines(config.bufnr, 0, 0, false, fill)
     vim.bo[config.bufnr].modifiable = false
